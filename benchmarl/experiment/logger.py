@@ -82,6 +82,18 @@ class Logger:
                 )
             )
 
+    def build_hparams(self, **kwargs):
+        kwargs.update(
+            {
+                "algorithm_name": self.algorithm_name,
+                "model_name": self.model_name,
+                "task_name": self.task_name,
+                "environment_name": self.environment_name,
+                "seed": self.seed,
+            }
+        )
+        return kwargs
+
     def log_hparams(self, **kwargs):
         kwargs.update(
             {
