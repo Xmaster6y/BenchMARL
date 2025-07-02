@@ -611,7 +611,7 @@ class Experiment(CallbackNotifier):
             pickle.dump(self.callbacks, f)
 
     def _setup_logger(self):
-        kwargs = {
+        hparams_kwargs = {
             "critic_model_name": self.critic_model_name,
             "experiment_config": self.config.__dict__,
             "algorithm_config": self.algorithm_config.__dict__,
@@ -621,7 +621,6 @@ class Experiment(CallbackNotifier):
             "continuous_actions": self.continuous_actions,
             "on_policy": self.on_policy,
         }
-        hparams = self.logger.build_hparams(**kwargs)
         self.logger = Logger(
             experiment_name=self.name,
             folder_name=str(self.folder_name),
@@ -635,10 +634,17 @@ class Experiment(CallbackNotifier):
             project_name=self.config.project_name,
             wandb_extra_kwargs={
                 **self.config.wandb_extra_kwargs,
-                "config": hparams,
+                "config": {
+                    **hparams_kwargs,
+                    "algorithm_name": self.algorithm_name,
+                    "model_name": self.model_name,
+                    "task_name": self.task_name,
+                    "environment_name": self.environment_name,
+                    "seed": self.seed,
+                },
             },
         )
-        self.logger.log_hparams(**kwargs)
+        self.logger.log_hparams(**hparams_kwargs)
 
     def run(self):
         """Run the experiment until completion."""
