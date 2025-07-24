@@ -620,6 +620,11 @@ class Experiment(CallbackNotifier):
             "task_config": self.task.config,
             "continuous_actions": self.continuous_actions,
             "on_policy": self.on_policy,
+            "algorithm_name": self.algorithm_name,
+            "model_name": self.model_name,
+            "task_name": self.task_name,
+            "environment_name": self.environment_name,
+            "seed": self.seed,
         }
         self.logger = Logger(
             experiment_name=self.name,
@@ -634,14 +639,7 @@ class Experiment(CallbackNotifier):
             project_name=self.config.project_name,
             wandb_extra_kwargs={
                 **self.config.wandb_extra_kwargs,
-                "config": {
-                    **hparams_kwargs,
-                    "algorithm_name": self.algorithm_name,
-                    "model_name": self.model_name,
-                    "task_name": self.task_name,
-                    "environment_name": self.environment_name,
-                    "seed": self.seed,
-                },
+                "config": hparams_kwargs,
             },
         )
         self.logger.log_hparams(**hparams_kwargs)
