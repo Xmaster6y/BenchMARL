@@ -958,10 +958,6 @@ class Experiment(CallbackNotifier):
         state_dict = OrderedDict(
             state=state,
             **{f"loss_{k}": item.state_dict() for k, item in self.losses.items()},
-            **{
-                f"buffer_{k}": item.state_dict() if len(item) else None
-                for k, item in self.replay_buffers.items()
-            },
         )
         if not self.config.collect_with_grad:
             state_dict.update({"collector": self.collector.state_dict()})
@@ -977,10 +973,6 @@ class Experiment(CallbackNotifier):
         """
         for group in self.group_map.keys():
             self.losses[group].load_state_dict(state_dict[f"loss_{group}"])
-            if state_dict[f"buffer_{group}"] is not None:
-                self.replay_buffers[group].load_state_dict(
-                    state_dict[f"buffer_{group}"]
-                )
         if not self.config.collect_with_grad:
             self.collector.load_state_dict(state_dict["collector"])
         self.total_time = state_dict["state"]["total_time"]
