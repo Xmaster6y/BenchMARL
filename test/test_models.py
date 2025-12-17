@@ -108,7 +108,7 @@ def test_loading_sequence_models(model_name, intermediate_size=10):
                 f"model/layers@model.layers.l1={model_name}",
                 f"model/layers@model.layers.l2={model_name}",
                 f"+model/layers@model.layers.l3={model_name}",
-                f"model.intermediate_sizes={[intermediate_size,intermediate_size]}",
+                f"model.intermediate_sizes={[intermediate_size, intermediate_size]}",
             ],
         )
         hydra_model_config = load_model_config_from_hydra(cfg.model)
@@ -385,6 +385,103 @@ class TestGnn:
         obs_input = input_spec.expand(batch_size).rand()
         output = gnn(obs_input)
         assert output_spec.expand(batch_size).is_in(output)
+
+    @pytest.mark.parametrize("share_params", [True, False])
+    def test_gnn_attention(
+        self,
+        share_params,
+        n_agents=3,
+        agent_goup="agents",
+        features=5,
+    ):
+        torch.manual_seed(0)
+
+        input_spec = Composite(
+            {
+                agent_goup: Composite(
+                    {"in": Unbounded(shape=(n_agents, features))},
+                    shape=(n_agents,),
+                )
+            }
+        )
+
+        output_spec = Composite(
+            {
+                agent_goup: Composite(
+                    {"out": Unbounded(shape=(n_agents, features))},
+                    shape=(n_agents,),
+                )
+            },
+        )
+
+        gnn = GnnConfig(
+            topology="full",
+            self_loops=True,
+            gnn_class=torch_geometric.nn.attention.PerformerAttention,
+            gnn_kwargs=None,
+            exclude_pos_from_node_features=False,
+        ).get_model(
+            input_spec=input_spec,
+            output_spec=output_spec,
+            agent_group=agent_goup,
+            input_has_agent_dim=True,
+            n_agents=n_agents,
+            centralised=False,
+            share_params=share_params,
+            device="cpu",
+            action_spec=None,
+        )
+
+        obs_input = input_spec.expand(4).rand()
+        output = gnn(obs_input)
+        assert output_spec.expand(4).is_in(output)
+
+    @pytest.mark.parametrize("share_params", [True, False])
+    def test_gnn_attention_raises(
+        self,
+        share_params,
+        n_agents=3,
+        agent_goup="agents",
+        features=5,
+    ):
+        torch.manual_seed(0)
+
+        input_spec = Composite(
+            {
+                agent_goup: Composite(
+                    {"in": Unbounded(shape=(n_agents, features))},
+                    shape=(n_agents,),
+                )
+            }
+        )
+
+        output_spec = Composite(
+            {
+                agent_goup: Composite(
+                    {"out": Unbounded(shape=(n_agents, features + 1))},
+                    shape=(n_agents,),
+                )
+            },
+        )
+
+        with pytest.raises(ValueError, match="Input and output features must"):
+            GnnConfig(
+                topology="full",
+                self_loops=True,
+                gnn_class=torch_geometric.nn.attention.PerformerAttention,
+                gnn_kwargs=None,
+                exclude_pos_from_node_features=False,
+            ).get_model(
+                input_spec=input_spec,
+                output_spec=output_spec,
+                agent_group=agent_goup,
+                input_has_agent_dim=True,
+                n_agents=n_agents,
+                centralised=False,
+                share_params=share_params,
+                device="cpu",
+                action_spec=None,
+            )
 
 
 class TestDeepsets:

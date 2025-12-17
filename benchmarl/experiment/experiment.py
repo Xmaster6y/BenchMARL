@@ -984,10 +984,6 @@ class Experiment(CallbackNotifier):
         """
         for group in self.group_map.keys():
             self.losses[group].load_state_dict(state_dict[f"loss_{group}"])
-            if state_dict[f"buffer_{group}"] is not None:
-                self.replay_buffers[group].load_state_dict(
-                    state_dict[f"buffer_{group}"]
-                )
         if not self.config.collect_with_grad:
             self.collector.load_state_dict(state_dict["collector"])
         self.total_time = state_dict["state"]["total_time"]
@@ -1050,6 +1046,7 @@ class Experiment(CallbackNotifier):
             critic_model_config = pickle.load(f)
             callbacks = pickle.load(f)
         task.config = task_config
+        experiment_config.save_folder = experiment_folder.parent
         experiment_config.restore_file = restore_file
         if experiment_patch is not None:
             for key, value in experiment_patch.items():
